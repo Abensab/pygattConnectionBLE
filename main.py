@@ -6,6 +6,8 @@ import sys
 import logging
 import binascii
 import pygatt
+from io import BytesIO
+import msgpack 
 
 #You must choose an obtion between public and random
 ADDRESS_TYPE = pygatt.BLEAddressType.public
@@ -87,17 +89,29 @@ def print_menu(menu, devices =None):  ## Your menu design here
 def read(device, uuid):
     try:
         print("-Read UUID %s: "% (uuid))
-        print("\n\t-Value: %s\n" % (device.char_read(uuid)))
-        print("\t-Bytes: 0x%s\n" % (binascii.hexlify(device.char_read(uuid))))
+        response = device.char_read(uuid)
+        print("\n\t-Value: %s\n" % (response))
+        print("\n\t--Response %s") % msgpack.unpackb(response, raw=False)
 
     except:
         print("-ERROR: Couldn't read the characteristic of UUID %s", uuid)
         
 def write(device, uuid):
-    new_value = raw_input("Enter the new value: ")
-    device.char_write(uuid, bytearray(new_value))
+    n = raw_input("Hoy many attributes you want to write?: ")
+    message=[]
+    for i in range(int(n)):
+        message.append(raw_input("Key: "))
+        message.append(raw_input("Value: "))
+    packed = msgpack.packb(message, use_bin_type=True)
+    print msgpack.unpackb(packed)
+    device.char_write(uuid, bytearray(packed))
 
-
+def handle_data(handle, value):
+    """
+    handle -- integer, characteristic read handle the data was received on
+    value -- bytearray, the data returned in the notification
+    """
+    print("---Received data: %s" % binascii.hexlify(value))
 
 
 if __name__ == '__main__':
@@ -111,7 +125,8 @@ if __name__ == '__main__':
         print("Connecting...")
         device = adapter.connect(address, address_type=ADDRESS_TYPE)
         print("Connected")
-        service_uuid= print_menu(SELECT_SERVICE,device)
+        service_uuid = print_menu(SELECT_SERVICE,device)
+        device.subscribe(service_uuid,callback = handle_data)
         loop =True
         while loop:
 
