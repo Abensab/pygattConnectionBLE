@@ -102,9 +102,8 @@ def write(device, uuid):
     for i in range(int(n)):
         message.append(raw_input("Key: "))
         message.append(raw_input("Value: "))
-    packed = msgpack.packb(message, use_bin_type=True)
-    print msgpack.unpackb(packed)
-    device.char_write(uuid, bytearray(packed))
+    pack = msgpack.packb(message, strict_types=True)
+    device.char_write(uuid, bytearray(pack))
 
 def handle_data(handle, value):
     """
