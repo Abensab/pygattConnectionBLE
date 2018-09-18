@@ -1,1 +1,2 @@
-config1.json
+*.gitignore
+config.json
